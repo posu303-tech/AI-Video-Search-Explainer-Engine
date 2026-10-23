@@ -1,6 +1,8 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -548,18 +550,32 @@ Return ONLY a valid JSON array of 4 to 6 video result objects with this structur
 
 // Configure Vite middleware or static serving
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  const rootDir = process.cwd();
+  // Find dist directory whether running from root, dist/, or anywhere else
+  let distPath = path.resolve(rootDir, 'dist');
+  if (!fs.existsSync(path.resolve(distPath, 'index.html'))) {
+    if (fs.existsSync(path.resolve(__dirname, 'index.html'))) {
+      distPath = __dirname;
+    } else if (fs.existsSync(path.resolve(__dirname, 'dist', 'index.html'))) {
+      distPath = path.resolve(__dirname, 'dist');
+    }
+  }
+
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER || process.env.K_SERVICE || fs.existsSync(path.resolve(distPath, 'index.html'));
+
+  if (isProduction && fs.existsSync(path.resolve(distPath, 'index.html'))) {
+    console.log(`Serving static production build from: ${distPath}`);
+    app.use(express.static(distPath));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.resolve(distPath, 'index.html'));
+    });
+  } else {
+    console.log('Mounting Vite dev middleware...');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.resolve(distPath, 'index.html'));
-    });
   }
 
   app.listen(Number(PORT), '0.0.0.0', () => {
