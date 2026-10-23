@@ -8,10 +8,10 @@ export interface StarterRepoFile {
 
 export const STARTER_REPO_FILES: StarterRepoFile[] = [
   {
-    name: 'app.py',
-    path: 'app.py',
+    name: 'streamlit_app.py',
+    path: 'streamlit_app.py',
     language: 'python',
-    description: 'Main Streamlit application with yt-dlp parsing, responsive split interface, and LLM explainer',
+    description: 'Main Streamlit entrypoint (named streamlit_app.py for automatic Streamlit Cloud detection)',
     content: `import streamlit as st
 import yt_dlp
 import requests
@@ -295,7 +295,7 @@ pip install -r requirements.txt
 
 4. **Run the Streamlit application**:
 \`\`\`bash
-streamlit run app.py
+streamlit run streamlit_app.py
 \`\`\`
 
 ---
@@ -305,7 +305,7 @@ streamlit run app.py
 1. Push your code to a public GitHub repository.
 2. Visit [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub.
 3. Click **"New app"**, select your repository and \`main\` branch.
-4. Set \`app.py\` as the entrypoint file.
+4. Main file path: \`streamlit_app.py\` (detected automatically by Streamlit Cloud).
 5. Click **Deploy!**
 `
   },

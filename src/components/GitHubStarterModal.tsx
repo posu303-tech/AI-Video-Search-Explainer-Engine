@@ -214,7 +214,7 @@ mkdir .streamlit`}
                     <span>Step 2. Paste Core Files</span>
                   </div>
                   <p className="text-xs text-slate-300">
-                    Download or copy <code className="text-blue-400">app.py</code>, <code className="text-blue-400">requirements.txt</code>, and <code className="text-blue-400">.streamlit/config.toml</code> from the "Project Files" tab into your directory.
+                    Download or copy <code className="text-blue-400 font-mono font-bold">streamlit_app.py</code>, <code className="text-blue-400 font-mono">requirements.txt</code>, and <code className="text-blue-400 font-mono">.streamlit/config.toml</code> from the "Project Files" tab into your directory.
                   </p>
                 </div>
 
@@ -240,9 +240,39 @@ git push -u origin main`}
                   </div>
                   <p className="text-xs text-slate-300">
                     1. Go to <a href="https://share.streamlit.io" target="_blank" rel="noreferrer" className="text-blue-400 underline">share.streamlit.io</a> and login with GitHub.<br />
-                    2. Click <strong>"New app"</strong>, choose your repository, set the branch to <code>main</code>, and set <code>app.py</code> as entrypoint.<br />
-                    3. Click <strong>Deploy!</strong> Your app will build dependencies with <code>yt-dlp</code> and go live with a public URL in 2 minutes.
+                    2. Click <strong>"New app"</strong> and choose your repository.<br />
+                    3. Main file path will automatically match <code>streamlit_app.py</code>.<br />
+                    4. Click <strong>Deploy!</strong>
                   </p>
+                </div>
+
+                {/* Troubleshooting Callout for "streamlit_app.py does not exist" */}
+                <div className="p-4 bg-amber-950/30 border border-amber-800/60 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 uppercase tracking-wider">
+                    <span>⚠️ Fixing "streamlit_app.py does not exist" Error</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Streamlit Community Cloud expects the entry file to be named <code className="text-amber-300 font-mono">streamlit_app.py</code> by default. If your repository file is currently named <code className="text-slate-200 font-mono">app.py</code>, you can fix it in 5 seconds using either method:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs">
+                    <div className="p-2.5 bg-slate-950/70 border border-slate-800 rounded-lg">
+                      <div className="font-semibold text-white mb-1">Method 1 (Instant in Streamlit Cloud UI):</div>
+                      <p className="text-slate-400">
+                        In Streamlit Cloud, go to your app settings &gt; find <strong>"Main file path"</strong> &gt; change <code className="text-blue-400">streamlit_app.py</code> to <code className="text-blue-400">app.py</code> &gt; click <strong>Save & Restart</strong>.
+                      </p>
+                    </div>
+                    <div className="p-2.5 bg-slate-950/70 border border-slate-800 rounded-lg">
+                      <div className="font-semibold text-white mb-1">Method 2 (Rename in Git):</div>
+                      <p className="text-slate-400 mb-1.5">
+                        Rename your file to the standard Streamlit name:
+                      </p>
+                      <pre className="p-1.5 bg-slate-900 rounded font-mono text-[10px] text-slate-300 overflow-x-auto">
+git mv app.py streamlit_app.py
+git commit -m "fix: rename entrypoint to streamlit_app.py"
+git push
+                      </pre>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
