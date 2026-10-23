@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Compass, ExternalLink, Play, Sparkles, Filter, ShieldCheck, Video, ArrowRight } from 'lucide-react';
+import { Search, Compass, ExternalLink, Play, Filter, ShieldCheck, Video, ArrowRight, Archive, Globe } from 'lucide-react';
 import { DeepScenarioSearchResult, VideoMetadata } from '../types';
 
 interface DeepScenarioSearchPanelProps {
@@ -12,10 +12,13 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
 }) => {
   const [scenarioInput, setScenarioInput] = useState('');
   const [includeHidden, setIncludeHidden] = useState(true);
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'non-youtube' | 'youtube'>('non-youtube');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([
-    'YouTube',
-    'Vimeo',
     'Internet Archive',
+    'Vimeo',
+    'Dailymotion',
+    'PeerTube',
+    'Web Archives',
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<DeepScenarioSearchResult[]>([]);
@@ -31,8 +34,9 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
     'Authentic field recording of vintage analog synthesizer calibration and oscilloscope tuning',
   ];
 
-  const handleSearch = async (scenarioToSearch?: string) => {
+  const handleSearch = async (scenarioToSearch?: string, overrideFilter?: 'all' | 'non-youtube' | 'youtube') => {
     const text = scenarioToSearch || scenarioInput;
+    const activeFilter = overrideFilter || sourceFilter;
     if (!text.trim()) {
       setErrorMessage('Please describe the scenario or context you want to search.');
       return;
@@ -47,7 +51,10 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
         body: JSON.stringify({
           scenario: text.trim(),
           includeHiddenLowViews: includeHidden,
-          platforms: selectedPlatforms,
+          platforms: activeFilter === 'non-youtube' 
+            ? ['Internet Archive', 'Vimeo', 'Dailymotion', 'PeerTube', 'Web Archives']
+            : selectedPlatforms,
+          sourceFilter: activeFilter,
         }),
       });
 
@@ -70,24 +77,49 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
     setIngestingId(null);
   };
 
-  const togglePlatform = (p: string) => {
-    if (selectedPlatforms.includes(p)) {
-      if (selectedPlatforms.length > 1) {
-        setSelectedPlatforms(selectedPlatforms.filter((x) => x !== p));
-      }
-    } else {
-      setSelectedPlatforms([...selectedPlatforms, p]);
+  // Filter displayed results based on current sourceFilter segregation
+  const displayedResults = React.useMemo(() => {
+    if (sourceFilter === 'non-youtube') {
+      return results.filter((r) => {
+        const u = (r.url || '').toLowerCase();
+        const p = (r.platform || '').toLowerCase();
+        return !u.includes('youtube.com') && !u.includes('youtu.be') && !p.includes('youtube');
+      });
     }
-  };
+    if (sourceFilter === 'youtube') {
+      return results.filter((r) => {
+        const u = (r.url || '').toLowerCase();
+        const p = (r.platform || '').toLowerCase();
+        return u.includes('youtube.com') || u.includes('youtu.be') || p.includes('youtube');
+      });
+    }
+    return results;
+  }, [results, sourceFilter]);
+
+  const nonYoutubeCount = results.filter((r) => {
+    const u = (r.url || '').toLowerCase();
+    const p = (r.platform || '').toLowerCase();
+    return !u.includes('youtube.com') && !u.includes('youtu.be') && !p.includes('youtube');
+  }).length;
 
   return (
     <div className="flex flex-col gap-6">
       {/* Search Header Banner */}
       <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-7 relative overflow-hidden">
         <div className="flex flex-col gap-3 relative z-10">
-          <div className="flex items-center gap-2 text-xs font-semibold text-blue-400 uppercase tracking-wider">
-            <Compass className="w-4 h-4" />
-            <span>Unbiased Deep Scenario Search Engine</span>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-blue-400 uppercase tracking-wider">
+              <Compass className="w-4 h-4" />
+              <span>Unbiased Deep Scenario Search Engine</span>
+            </div>
+
+            {/* Prominent Source Segregation Mode Tag */}
+            {sourceFilter === 'non-youtube' && (
+              <span className="text-xs font-semibold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2.5 py-1 rounded-md flex items-center gap-1.5">
+                <Archive className="w-3.5 h-3.5" />
+                <span>Non-YouTube Sources Segregated</span>
+              </span>
+            )}
           </div>
 
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
@@ -95,8 +127,68 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
           </h2>
 
           <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
-            Unlike popularity-biased recommendation algorithms, this search engine performs semantic context retrieval across video platforms (YouTube, Vimeo, Internet Archive) to uncover independent uploads, rare documentation, and long-tail recordings matching your exact scenario.
+            Search beyond mainstream popularity algorithms. Use the source segregation controls below to isolate 
+            <span className="text-amber-400 font-medium"> non-YouTube archives</span> (Internet Archive, Vimeo, Dailymotion, PeerTube, university labs) or search across all platforms simultaneously.
           </p>
+
+          {/* Primary Source Segregation Buttons (Requested Feature) */}
+          <div className="mt-2 flex flex-wrap items-center gap-2 p-1.5 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <span className="text-xs text-slate-400 font-medium px-2">Source Segregation:</span>
+            
+            <button
+              type="button"
+              onClick={() => {
+                setSourceFilter('non-youtube');
+                if (scenarioInput.trim()) {
+                  handleSearch(scenarioInput, 'non-youtube');
+                }
+              }}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+                sourceFilter === 'non-youtube'
+                  ? 'bg-amber-600 text-white shadow-md ring-2 ring-amber-500/30'
+                  : 'bg-slate-900 text-amber-300 hover:text-white hover:bg-slate-800 border border-amber-900/60'
+              }`}
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>Segregate Non-YouTube Sources (Archive.org, Vimeo, etc.)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSourceFilter('all');
+                if (scenarioInput.trim()) {
+                  handleSearch(scenarioInput, 'all');
+                }
+              }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+                sourceFilter === 'all'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white bg-slate-900/60'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>All Sources Combined</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSourceFilter('youtube');
+                if (scenarioInput.trim()) {
+                  handleSearch(scenarioInput, 'youtube');
+                }
+              }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+                sourceFilter === 'youtube'
+                  ? 'bg-red-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white bg-slate-900/60'
+              }`}
+            >
+              <Video className="w-3.5 h-3.5" />
+              <span>YouTube Only</span>
+            </button>
+          </div>
 
           {/* Scenario Input Box */}
           <form
@@ -104,12 +196,12 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
               e.preventDefault();
               handleSearch();
             }}
-            className="mt-3 flex flex-col gap-3"
+            className="mt-2 flex flex-col gap-3"
           >
             <div className="relative">
               <textarea
                 rows={3}
-                placeholder="Describe the scenario in natural language (e.g. 'Unfiltered independent workshop repair of Mercedes GLS transmission solenoid', 'Archival footage of early MIT AI lab experiments', 'Niche math proof walk-through')..."
+                placeholder="Describe the scenario in natural language (e.g. 'Rare 1970s footage of Bell Labs Unix developers working on PDP-11', 'Unfiltered independent workshop repair of Mercedes transmission solenoid', 'Niche mathematics simulation of Collatz anomaly')..."
                 value={scenarioInput}
                 onChange={(e) => {
                   setScenarioInput(e.target.value);
@@ -121,27 +213,6 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
 
             {/* Filter Controls Row */}
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-slate-400 font-medium flex items-center gap-1">
-                  <Filter className="w-3.5 h-3.5" />
-                  <span>Platforms:</span>
-                </span>
-                {['YouTube', 'Vimeo', 'Internet Archive'].map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => togglePlatform(p)}
-                    className={`px-2.5 py-1 rounded-md transition-colors ${
-                      selectedPlatforms.includes(p)
-                        ? 'bg-blue-600 text-white font-medium'
-                        : 'bg-slate-800 text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-300">
                   <input
@@ -150,9 +221,13 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
                     onChange={(e) => setIncludeHidden(e.target.checked)}
                     className="w-3.5 h-3.5 rounded text-blue-600 bg-slate-950 border-slate-700 focus:ring-0"
                   />
-                  <span>Prioritize Low-View & Hidden Gems (&lt;10k views)</span>
+                  <span>Prioritize Low-View &amp; Rare Archival Recordings (&lt;10k views)</span>
                 </label>
               </div>
+
+              <span className="text-[11px] text-slate-400">
+                Active Source Filter: <strong className="text-slate-200">{sourceFilter === 'non-youtube' ? 'Non-YouTube Archives Only' : sourceFilter === 'youtube' ? 'YouTube Only' : 'All Sources'}</strong>
+              </span>
             </div>
 
             {errorMessage && (
@@ -167,12 +242,12 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
               {isLoading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Carrying Out Deep Semantic Search...</span>
+                  <span>Searching {sourceFilter === 'non-youtube' ? 'Non-YouTube Repositories' : 'Sources'}...</span>
                 </>
               ) : (
                 <>
                   <Search className="w-4 h-4" />
-                  <span>Execute Unbiased Scenario Search</span>
+                  <span>Search {sourceFilter === 'non-youtube' ? 'Non-YouTube Video Sources' : 'Videos'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
@@ -180,7 +255,7 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
           </form>
 
           {/* Sample Prompts */}
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className="text-[11px] text-slate-400 font-medium mr-1">Sample Scenarios:</span>
             {sampleScenarios.map((s, idx) => (
               <button
@@ -204,7 +279,7 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
         <div className="py-16 bg-slate-900/40 border border-slate-800 rounded-2xl flex flex-col items-center justify-center gap-3 text-slate-400">
           <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
           <div className="text-xs font-medium text-slate-200">
-            Crawling video repositories & archival nodes for scenario matches...
+            Crawling {sourceFilter === 'non-youtube' ? 'Internet Archive, Vimeo & alternative repositories' : 'video repositories'} for scenario matches...
           </div>
           <div className="text-[11px] text-slate-500">
             Filtering out algorithmic bias and prioritizing authentic, low-view long-tail uploads
@@ -212,32 +287,58 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
         </div>
       )}
 
-      {!isLoading && results.length > 0 && (
+      {!isLoading && displayedResults.length > 0 && (
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-              Discovered Videos Matching Scenario ({results.length} results)
-            </span>
-            <span className="text-[11px] text-emerald-400 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Unbiased & Uncensored Indexing</span>
-            </span>
+          <div className="flex items-center justify-between pb-2 border-b border-slate-800 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Discovered Videos ({displayedResults.length} {sourceFilter === 'non-youtube' ? 'Non-YouTube results' : 'results'})
+              </span>
+              {sourceFilter === 'non-youtube' && (
+                <span className="text-[11px] text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded border border-amber-800/60 font-medium">
+                  YouTube Excluded
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-xs">
+              <button
+                onClick={() => setSourceFilter(sourceFilter === 'non-youtube' ? 'all' : 'non-youtube')}
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+              >
+                {sourceFilter === 'non-youtube' ? 'Show All Sources' : `Segregate Non-YouTube Only (${nonYoutubeCount})`}
+              </button>
+              <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Unbiased &amp; Uncensored Indexing</span>
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {results.map((result) => {
+            {displayedResults.map((result) => {
               const isIngestingThis = ingestingId === result.id;
+              const isYouTube = (result.url || '').includes('youtube') || (result.platform || '').toLowerCase().includes('youtube');
+
               return (
                 <div
                   key={result.id}
-                  className="p-5 bg-slate-900/60 border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col justify-between gap-4 transition-all group"
+                  className={`p-5 rounded-xl border flex flex-col justify-between gap-4 transition-all group ${
+                    !isYouTube 
+                      ? 'bg-slate-900/80 border-amber-900/40 hover:border-amber-700/60 shadow-sm'
+                      : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                  }`}
                 >
                   <div className="space-y-2.5">
                     {/* Platform & Tier info */}
                     <div className="flex items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[11px]">
-                        <Video className="w-3.5 h-3.5 text-blue-400" />
-                        <span>{result.platform}</span>
+                        {!isYouTube ? (
+                          <Archive className="w-3.5 h-3.5 text-amber-400" />
+                        ) : (
+                          <Video className="w-3.5 h-3.5 text-blue-400" />
+                        )}
+                        <span className={!isYouTube ? "text-amber-300 font-semibold" : ""}>{result.platform}</span>
                         <span aria-hidden="true">·</span>
                         <span className="text-amber-400 font-medium">{result.viewCountTier}</span>
                       </div>
@@ -251,7 +352,7 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
                     </h3>
 
                     <div className="text-xs text-slate-400">
-                      <span>Uploader / Channel:</span>{' '}
+                      <span>Uploader / Repository:</span>{' '}
                       <span className="text-slate-300 font-medium">{result.channelOrAuthor}</span>
                     </div>
 
@@ -275,7 +376,7 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
                       className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open Source Video</span>
+                      <span>Open on {result.platform}</span>
                     </a>
 
                     <button
@@ -291,7 +392,7 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
                       ) : (
                         <>
                           <Play className="w-3 h-3 fill-current" />
-                          <span>Ingest & Explain Video</span>
+                          <span>Ingest &amp; Explain Video</span>
                         </>
                       )}
                     </button>
@@ -300,6 +401,20 @@ export const DeepScenarioSearchPanel: React.FC<DeepScenarioSearchPanelProps> = (
               );
             })}
           </div>
+        </div>
+      )}
+
+      {!isLoading && results.length > 0 && displayedResults.length === 0 && (
+        <div className="p-8 text-center bg-slate-900/40 border border-slate-800 rounded-xl space-y-3">
+          <p className="text-xs text-slate-400">
+            Current results contain {results.length} videos, but all were from YouTube.
+          </p>
+          <button
+            onClick={() => handleSearch(scenarioInput, 'non-youtube')}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg"
+          >
+            Run Deep Search for Non-YouTube Repositories (Internet Archive, Vimeo)
+          </button>
         </div>
       )}
     </div>
