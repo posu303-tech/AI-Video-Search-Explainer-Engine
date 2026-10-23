@@ -7,13 +7,14 @@ import { SemanticSearchPanel } from './components/SemanticSearchPanel';
 import { VectorNodeVisualizer } from './components/VectorNodeVisualizer';
 import { TranscriptViewer } from './components/TranscriptViewer';
 import { GitHubStarterModal } from './components/GitHubStarterModal';
+import { DeepScenarioSearchPanel } from './components/DeepScenarioSearchPanel';
 import { SAMPLE_VIDEOS } from './data/sampleVideos';
 import { VideoMetadata, AIExplanationResult, SemanticSearchResult, VectorNode } from './types';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [activeVideo, setActiveVideo] = useState<VideoMetadata>(SAMPLE_VIDEOS[0]);
-  const [activeTab, setActiveTab] = useState<'workspace' | 'vector-graph' | 'transcript' | 'starter-kit'>('workspace');
+  const [activeTab, setActiveTab] = useState<'workspace' | 'deep-search' | 'vector-graph' | 'transcript' | 'starter-kit'>('workspace');
   const [seekTime, setSeekTime] = useState<number | null>(null);
   const [isIngestModalOpen, setIsIngestModalOpen] = useState(false);
   const [isStarterModalOpen, setIsStarterModalOpen] = useState(false);
@@ -234,6 +235,23 @@ export default function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Deep Scenario Search Tab */}
+        {activeTab === 'deep-search' && (
+          <DeepScenarioSearchPanel
+            onIngestVideoUrl={async (url) => {
+              const success = await handleIngestUrl(url);
+              if (success) {
+                setActiveTab('workspace');
+              }
+              return success;
+            }}
+            onSelectLoadedVideo={(video) => {
+              setActiveVideo(video);
+              setActiveTab('workspace');
+            }}
+          />
         )}
 
         {/* Semantic Vector Graph Tab */}

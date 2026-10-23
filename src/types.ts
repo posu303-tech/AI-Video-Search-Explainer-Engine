@@ -64,3 +64,16 @@ export interface SemanticSearchResult {
   synthesizedAnswer: string;
   confidence: number;
 }
+
+export interface DeepScenarioSearchResult {
+  id: string;
+  title: string;
+  url: string;
+  platform: 'YouTube' | 'Vimeo' | 'Internet Archive' | 'Dailymotion' | 'Web Archive' | 'Other';
+  channelOrAuthor: string;
+  relevanceExplanation: string;
+  scenarioMatchScore: number;
+  viewCountTier: 'Rare / Hidden (<1K views)' | 'Niche Community (<10K views)' | 'Independent / Long-tail' | 'Uncensored Archive';
+  keyContextSnippet: string;
+}
+

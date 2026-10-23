@@ -1,9 +1,9 @@
 import React from 'react';
-import { PlaySquare, Sparkles, Code2, Network, FileText } from 'lucide-react';
+import { PlaySquare, Sparkles, Code2, Network, FileText, Compass } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'workspace' | 'vector-graph' | 'transcript' | 'starter-kit';
-  onTabChange: (tab: 'workspace' | 'vector-graph' | 'transcript' | 'starter-kit') => void;
+  activeTab: 'workspace' | 'deep-search' | 'vector-graph' | 'transcript' | 'starter-kit';
+  onTabChange: (tab: 'workspace' | 'deep-search' | 'vector-graph' | 'transcript' | 'starter-kit') => void;
   onOpenIngest: () => void;
   videoTitle?: string;
 }
@@ -43,6 +43,16 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Workspace</span>
+          </button>
+
+          <button
+            onClick={() => onTabChange('deep-search')}
+            className={`flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 ${
+              activeTab === 'deep-search' ? 'text-white border-b-2 border-blue-500 pb-0.5' : 'hover:text-slate-200'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Deep Scenario Search</span>
           </button>
 
           <button
