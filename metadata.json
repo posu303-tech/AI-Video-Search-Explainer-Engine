@@ -1,0 +1,6 @@
+{
+  "name": "AI Video Search & Explainer Engine",
+  "description": "Index video transcripts, search semantic vector nodes with timestamp jumps, and generate deep narrative breakdowns with Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
